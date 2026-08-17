@@ -8,7 +8,7 @@
     "directory": "./public"
   },
   "vars": {
-    "ACCOUNT_ID": "REPLACE_WITH_YOUR_CLOUDFLARE_ACCOUNT_ID"
+    "ACCOUNT_ID": "b3ce9ee6c65f3f652836c88474249aed"
   },
   "analytics_engine_datasets": [
     {
