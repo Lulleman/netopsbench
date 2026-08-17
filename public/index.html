@@ -167,12 +167,35 @@
 </main></div>
 
 <script>
+
+function track(event, props={}){
+  try{
+    const payload={event, ...props};
+    if(!navigator.sendBeacon || !navigator.sendBeacon('/api/event', new Blob([JSON.stringify(payload)],{type:'application/json'}))){
+      fetch('/api/event',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload),
+        keepalive:true
+      }).catch(()=>{});
+    }
+  }catch(e){}
+}
+const trackedTools = new Set();
+function trackToolUse(tool, action='use'){
+  const key=`netopsbench_${action}_${tool}`;
+  if(!sessionStorage.getItem(key)){
+    sessionStorage.setItem(key,'1');
+    track(action, {tool});
+  }
+}
+
 const $=id=>document.getElementById(id);
 function ipToInt(ip){const p=ip.trim().split('.').map(Number);if(p.length!==4||p.some(x=>!Number.isInteger(x)||x<0||x>255))throw Error('Invalid IPv4 address');return (((p[0]*256+p[1])*256+p[2])*256+p[3])>>>0}
 function intToIp(n){return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join('.')}
 function maskInt(p){return p===0?0:(0xffffffff<<(32-p))>>>0}
 function fillPrefixes(sel,from=0){sel.innerHTML='';for(let i=from;i<=32;i++){const o=document.createElement('option');o.value=i;o.textContent='/'+i;sel.appendChild(o)}}
-function openPage(name){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$('page-'+name).classList.add('active');document.querySelectorAll('.nav[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===name));scrollTo(0,0)}
+function openPage(name){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$('page-'+name).classList.add('active');document.querySelectorAll('.nav[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===name));currentTool=name;if(name!=='dashboard')track('tool_open',{tool:name});scrollTo(0,0)}
 document.querySelectorAll('[data-open]').forEach(x=>x.onclick=()=>openPage(x.dataset.open));
 document.querySelectorAll('.nav[data-page]').forEach(x=>x.onclick=()=>openPage(x.dataset.page));
 
@@ -181,17 +204,17 @@ function subnetCalc(){
  try{const ip=ipToInt($('sIp').value),p=+$('sPrefix').value,mask=maskInt(p),n=(ip&mask)>>>0,b=(n|(~mask))>>>0,total=2**(32-p),usable=p<=30?Math.max(0,total-2):p===31?2:1,first=p<=30?n+1:n,last=p<=30?b-1:b;
  let h=`<div class="grid"><div class="item"><div class="k">Network</div><div class="v">${intToIp(n)}</div></div><div class="item"><div class="k">Broadcast</div><div class="v">${intToIp(b)}</div></div><div class="item"><div class="k">Subnet Mask</div><div class="v">${intToIp(mask)}</div></div><div class="item"><div class="k">Wildcard</div><div class="v">${intToIp((~mask)>>>0)}</div></div><div class="item"><div class="k">First Host</div><div class="v">${intToIp(first)}</div></div><div class="item"><div class="k">Last Host</div><div class="v">${intToIp(last)}</div></div><div class="item"><div class="k">Usable Hosts</div><div class="v host">${usable.toLocaleString('sv-SE')}</div></div><div class="item"><div class="k">Total Addresses</div><div class="v">${total.toLocaleString('sv-SE')}</div></div></div>`;
  h+=`<div class="section"><h2>Split subnet</h2><div class="split"><div style="flex:1"><label class="label">New prefix</label><select id="sSplit"></select></div></div><div id="sSubnets"></div></div>`;
- $('sResult').innerHTML=h;$('sError').textContent='';fillPrefixes($('sSplit'),p);$('sSplit').value=Math.min(p+1,32);renderSplit(n,p,+$('sSplit').value);$('sSplit').onchange=()=>renderSplit(n,p,+$('sSplit').value)
+ $('sResult').innerHTML=h;$('sError').textContent='';trackToolUse('subnet','tool_use');fillPrefixes($('sSplit'),p);$('sSplit').value=Math.min(p+1,32);renderSplit(n,p,+$('sSplit').value);$('sSplit').onchange=()=>renderSplit(n,p,+$('sSplit').value)
  }catch(e){$('sError').textContent=e.message;$('sResult').innerHTML=''}}
 function renderSplit(n,p,np){const count=2**(np-p),size=2**(32-np);if(count>1024){$('sSubnets').innerHTML='<div class="subnetrow">Too many subnets to display.</div>';return}let h='<div class="subnets">';for(let i=0;i<count;i++){const x=(n+i*size)>>>0,b=(x+size-1)>>>0,u=np<=30?Math.max(0,size-2):np===31?2:1;h+=`<div class="subnetrow"><div class="subnetmain">${intToIp(x)}/${np}</div><div><span>First</span>${intToIp(np<=30?x+1:x)}</div><div><span>Last</span>${intToIp(np<=30?b-1:b)}</div><div><span>Broadcast</span>${intToIp(b)}</div><div><span>Hosts</span>${u}</div></div>`}$('sSubnets').innerHTML=h+'</div>'}
 $('sPrefix').onchange=subnetCalc;$('sIp').onkeydown=e=>{if(e.key==='Enter')subnetCalc()};
-let sTimer; $('sIp').oninput=()=>{clearTimeout(sTimer);sTimer=setTimeout(subnetCalc,150)};$('sCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('sResult').innerText);$('sCopy').textContent='Copied ✓';setTimeout(()=>$('sCopy').textContent='Copy result',1000)}catch{}};
+let sTimer; $('sIp').oninput=()=>{clearTimeout(sTimer);sTimer=setTimeout(subnetCalc,150)};$('sCopy').onclick=async()=>{track('copy_result',{tool:'subnet'});try{await navigator.clipboard.writeText($('sResult').innerText);$('sCopy').textContent='Copied ✓';setTimeout(()=>$('sCopy').textContent='Copy result',1000)}catch{}};
 
 fillPrefixes($('ePrefix'));$('ePrefix').value=16;
 let rows=[],page=1;
 function childOptions(){const p=+$('ePrefix').value;fillPrefixes($('eChildPrefix'),p);$('eChildPrefix').value=Math.min(p+8,32)}
 function buildExplorer(){try{const p=+$('ePrefix').value,cp=+$('eChildPrefix').value,ip=ipToInt($('eIp').value);if(cp<p)throw Error('Child prefix must be equal to or longer than parent prefix.');const n=(ip&maskInt(p))>>>0,count=2**(cp-p),size=2**(32-cp);if(count>65536)throw Error('Too many subnets. Choose a shorter child prefix.');rows=[];for(let i=0;i<count;i++){const x=(n+i*size)>>>0,b=(x+size-1)>>>0,u=cp<=30?Math.max(0,size-2):cp===31?2:1;rows.push({sub:`${intToIp(x)}/${cp}`,first:intToIp(cp<=30?x+1:x),last:intToIp(cp<=30?b-1:b),b:intToIp(b),u})}$('eSummary').innerHTML=`<div class="rangegrid"><div class="rangebox"><div class="k">Parent network</div><div class="v">${intToIp(n)}/${p}</div></div><div class="rangebox"><div class="k">Total addresses</div><div class="v">${(2**(32-p)).toLocaleString('sv-SE')}</div></div><div class="rangebox"><div class="k">Subnets</div><div class="v">${count.toLocaleString('sv-SE')}</div></div><div class="rangebox"><div class="k">Addresses / subnet</div><div class="v">${size.toLocaleString('sv-SE')}</div></div></div>`;$('eError').textContent='';page=1;renderExplorer()}catch(e){$('eError').textContent=e.message;$('eSummary').innerHTML='';$('eTable').innerHTML=''}}
-function renderExplorer(){const q=$('eSearch').value.trim().toLowerCase(),filtered=rows.filter(r=>!q||r.sub.toLowerCase().includes(q)||r.first.includes(q)||r.last.includes(q)||r.b.includes(q)),ps=+$('ePageSize').value,pages=Math.max(1,Math.ceil(filtered.length/ps));page=Math.min(Math.max(page,1),pages);const from=(page-1)*ps,to=Math.min(from+ps,filtered.length);let h='<div class="pageinfo"><span>Showing '+(filtered.length?from+1:0)+'–'+to+' of '+filtered.length+' subnets</span><span>Page '+page+' / '+pages+'</span></div><div class="tablewrap"><table class="table"><thead><tr><th>Subnet</th><th>First Host</th><th>Last Host</th><th>Broadcast</th><th>Hosts</th><th></th></tr></thead><tbody>';for(const r of filtered.slice(from,to))h+=`<tr><td><code>${r.sub}</code></td><td><code>${r.first}</code></td><td><code>${r.last}</code></td><td><code>${r.b}</code></td><td>${r.u}</td><td><button class="mini copyRow" data-copy="${r.sub}">Copy</button></td></tr>`;if(!filtered.length)h+='<tr><td colspan="6">No matching subnets.</td></tr>';h+=`</tbody></table></div><div class="pagination"><button id="prev" ${page<=1?'disabled':''}>← Previous</button><button id="next" ${page>=pages?'disabled':''}>Next →</button></div>`;$('eTable').innerHTML=h;$('prev').onclick=()=>{page--;renderExplorer()};$('next').onclick=()=>{page++;renderExplorer()};document.querySelectorAll('.copyRow').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.copy);b.textContent='Copied ✓';setTimeout(()=>b.textContent='Copy',800)}catch{}})}
+function renderExplorer(){const q=$('eSearch').value.trim().toLowerCase(),filtered=rows.filter(r=>!q||r.sub.toLowerCase().includes(q)||r.first.includes(q)||r.last.includes(q)||r.b.includes(q)),ps=+$('ePageSize').value,pages=Math.max(1,Math.ceil(filtered.length/ps));page=Math.min(Math.max(page,1),pages);const from=(page-1)*ps,to=Math.min(from+ps,filtered.length);let h='<div class="pageinfo"><span>Showing '+(filtered.length?from+1:0)+'–'+to+' of '+filtered.length+' subnets</span><span>Page '+page+' / '+pages+'</span></div><div class="tablewrap"><table class="table"><thead><tr><th>Subnet</th><th>First Host</th><th>Last Host</th><th>Broadcast</th><th>Hosts</th><th></th></tr></thead><tbody>';for(const r of filtered.slice(from,to))h+=`<tr><td><code>${r.sub}</code></td><td><code>${r.first}</code></td><td><code>${r.last}</code></td><td><code>${r.b}</code></td><td>${r.u}</td><td><button class="mini copyRow" data-copy="${r.sub}">Copy</button></td></tr>`;if(!filtered.length)h+='<tr><td colspan="6">No matching subnets.</td></tr>';h+=`</tbody></table></div><div class="pagination"><button id="prev" ${page<=1?'disabled':''}>← Previous</button><button id="next" ${page>=pages?'disabled':''}>Next →</button></div>`;$('eTable').innerHTML=h;trackToolUse('explorer','tool_use');$('prev').onclick=()=>{page--;renderExplorer()};$('next').onclick=()=>{page++;renderExplorer()};document.querySelectorAll('.copyRow').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.copy);b.textContent='Copied ✓';setTimeout(()=>b.textContent='Copy',800)}catch{}})}
 childOptions();buildExplorer();$('ePrefix').onchange=()=>{childOptions();buildExplorer()};$('eChildPrefix').onchange=buildExplorer;$('eSearch').oninput=()=>{page=1;renderExplorer()};$('ePageSize').onchange=()=>{page=1;renderExplorer()};$('eIp').onkeydown=e=>{if(e.key==='Enter')buildExplorer()};
 
 
@@ -226,7 +249,7 @@ function updateMtu(){
     const effective=base-overhead;
     let cls=effective>=1500?'good':effective>=1280?'warn':'bad';
     let status=effective>=1500?'Good headroom for a 1500-byte IP packet':effective>=1280?'Reduced payload — verify the path MTU':'Low effective MTU — fragmentation or PMTUD issues may occur';
-    $('mResult').innerHTML=`<div class="opt-result">
+    trackToolUse('mtu','tool_use');$('mResult').innerHTML=`<div class="opt-result">
       <div class="opt-box"><div class="k">Total overhead</div><div class="v">${overhead} bytes</div></div>
       <div class="opt-box"><div class="k">Effective MTU</div><div class="v">${effective} bytes</div></div>
       <div class="opt-box"><div class="k">Available payload</div><div class="v">${Math.max(0,effective-20)} bytes</div></div>
@@ -266,7 +289,7 @@ function updateConfig(){
       lines.push(' switchport mode trunk',` switchport trunk native vlan ${nativeVlan}`,` switchport trunk allowed vlan ${vlanList}`);
       if($('cDisableDtp').value==='yes')lines.push(' switchport nonegotiate');
     }
-    $('cOutput').textContent=lines.join('\n');$('cError').textContent='';
+    $('cOutput').textContent=lines.join('\n');$('cError').textContent='';trackToolUse('config','config_generated');
   }catch(e){$('cOutput').textContent='';$('cError').textContent=e.message}
 }
 function toggleTrunkFields(){
@@ -292,7 +315,7 @@ function updateOptics(){
     let mw=unit==='dbm'?10**(v/10):unit==='w'?v*1000:v;
     if(mw<=0)throw Error('Power must be greater than 0.');
     const dbm=10*Math.log10(mw);
-    $('oConvert').innerHTML=`<div class="opt-result">
+    trackToolUse('optics','tool_use');$('oConvert').innerHTML=`<div class="opt-result">
       <div class="opt-box"><div class="k">dBm</div><div class="v">${dbm.toFixed(3)}</div></div>
       <div class="opt-box"><div class="k">mW</div><div class="v">${mw.toFixed(6)}</div></div>
       <div class="opt-box"><div class="k">W</div><div class="v">${(mw/1000).toFixed(9)}</div></div>
@@ -314,5 +337,6 @@ $('oUnit').onchange=updateOptics;
 updateOptics();
 
 subnetCalc();
+document.addEventListener('click',e=>{const b=e.target.closest('.copyRow');if(b)track('copy_result',{tool:'explorer'});});
 </script>
 </body></html>
