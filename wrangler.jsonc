@@ -7,6 +7,9 @@
     "binding": "ASSETS",
     "directory": "./public"
   },
+  "vars": {
+    "ACCOUNT_ID": "REPLACE_WITH_YOUR_CLOUDFLARE_ACCOUNT_ID"
+  },
   "analytics_engine_datasets": [
     {
       "binding": "NETOPS_EVENTS",
