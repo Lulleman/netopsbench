@@ -1,8 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "netopsbench",
+  "main": "src/index.js",
   "compatibility_date": "2026-08-17",
   "assets": {
+    "binding": "ASSETS",
     "directory": "./public"
-  }
+  },
+  "analytics_engine_datasets": [
+    {
+      "binding": "NETOPS_EVENTS",
+      "dataset": "netopsbench_events"
+    }
+  ]
 }
