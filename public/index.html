@@ -265,7 +265,7 @@ async function lookupMac(){
  const input=$('macInput').value.trim();const mac=normalizeMac(input);$('macError').textContent='';$('macResult').innerHTML='';
  if(mac.length<6||mac.length>12||!/^[0-9A-F]+$/.test(mac)){ $('macError').textContent='Enter a valid MAC address or OUI (at least 6 hex characters).'; return; }
  trackToolUse('mac-vendor','tool_use'); const btn=$('macLookup');btn.disabled=true;btn.textContent='Looking up…';
- try{const r=await fetch('/api/mac?v='+encodeURIComponent(mac));const d=await r.json();if(!r.ok||!d.found)throw Error('No vendor found for that MAC/OUI.');
+ try{const r=await fetch('/api/mac?v='+encodeURIComponent(mac));const d=await r.json();if(!r.ok||!d.found)throw Error(d.error||'No vendor found for that MAC/OUI.');
  $('macResult').innerHTML=`<div class="mac-hero"><div><div class="k">Vendor</div><div class="mac-vendor">${escapeHtml(d.company||'Unknown')}</div><div class="v" style="margin-top:9px">${escapeHtml(d.macPrefix||mac)}</div></div><div><div class="k">Assignment</div><div class="v" style="margin-top:7px">${escapeHtml(d.blockType||'—')}</div></div></div><div class="mac-meta"><div class="item"><div class="k">Block size</div><div class="v">${escapeHtml(String(d.blockSize||'—'))}</div></div><div class="item"><div class="k">Updated</div><div class="v">${escapeHtml(d.updated||'—')}</div></div><div class="item"><div class="k">Randomized MAC</div><div class="v">${d.isRand?'Yes':'No'}</div></div></div>`;
  }catch(e){$('macError').textContent=e.message||'Lookup failed.'}finally{btn.disabled=false;btn.textContent='Lookup'}
 }
