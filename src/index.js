@@ -93,7 +93,7 @@ svg{width:100%;height:180px;display:block}.axis{color:#718095;font-size:10px}
 <div class="section card"><h2>Activity</h2><div id="activity" class="muted">Loading…</div></div>
 </div>
 <script>
-async function api(path,options={}){const r=await fetch(path,options);let body=null;try{body=await r.json()}catch{}if(r.status===401)throw new Error('Unauthorized');if(!r.ok)throw new Error(body?.error||`Request failed (${r.status})`);return body;}
+async function api(path,options={}){const r=await fetch(path,options);let body=null;try{body=await r.json()}catch{}if(r.status===401)throw new Error('Unauthorized');if(!r.ok)throw new Error(body?.error||('Request failed ('+r.status+')'));return body;}
 const fmt=n=>Number(n||0).toLocaleString();
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function drawActivity(rows){
