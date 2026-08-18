@@ -1,10 +1,9 @@
 const ALLOWED = {
   session_start: new Set(["session"]),
   tool_open: new Set(["subnet", "explorer", "optics", "config", "mtu", "dashboard"]),
-  tool_use: new Set(["subnet", "explorer", "optics", "config", "mtu", "mac-vendor"]),
+  tool_use: new Set(["subnet", "explorer", "optics", "config", "mtu"]),
   config_generated: new Set(["config"]),
-  copy_result: new Set(["subnet", "explorer"]),
-  tool_use_mac: new Set(["mac-vendor"])
+  copy_result: new Set(["subnet", "explorer"])
 };
 
 function json(data, status = 200, headers = {}) {
@@ -122,33 +121,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname === "/api/mac" && request.method === "GET") {
-      const v = (url.searchParams.get("v") || "").replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
-      if (v.length < 6 || v.length > 12) return json({found:false},400);
-      const cache = caches.default;
-      const cacheKey = new Request(`https://mac-cache.netopsbench.internal/${v}`);
-      let cached = await cache.match(cacheKey);
-      if (cached) return cached;
-      try {
-        const upstream = await fetch(`https://api.maclookup.app/v2/macs/${encodeURIComponent(v)}`, {
-          headers: {"Accept":"application/json"}
-        });
-        if (!upstream.ok) return json({found:false},502);
-        const data = await upstream.json();
-        const body = JSON.stringify(data);
-        const response = new Response(body, {
-          headers: {
-            "content-type":"application/json; charset=utf-8",
-            "cache-control":"public, max-age=86400, s-maxage=86400"
-          }
-        });
-        await cache.put(cacheKey,response.clone());
-        return response;
-      } catch {
-        return json({found:false},502);
-      }
-    }
-
     if (url.pathname === "/api/event" && request.method === "POST") {
       try {
         const body = await request.json();
@@ -179,7 +151,7 @@ export default {
         }
         const sig = await adminSignature(env);
         return json({ok:true},200,{
-          "Set-Cookie": `nb_admin=${sig}; Max-Age=28800; Path=/admin; Secure; HttpOnly; SameSite=Strict`
+          "Set-Cookie": `nb_admin=${sig}; Max-Age=28800; Path=/; Secure; HttpOnly; SameSite=Strict`
         });
       } catch {
         return json({error:"unauthorized"},401);
