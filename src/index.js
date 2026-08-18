@@ -27,8 +27,18 @@ async function query(env, sql) {
     },
     body: sql
   });
-  if (!r.ok) throw new Error(`Analytics API ${r.status}: ${await r.text()}`);
-  return r.json();
+  const text = await r.text();
+  if (!r.ok) {
+    let detail = `Analytics API ${r.status}`;
+    try {
+      const body = JSON.parse(text);
+      const msg = body?.errors?.map(e => e.message).filter(Boolean).join("; ");
+      if (msg) detail += `: ${msg}`;
+    } catch {}
+    throw new Error(detail);
+  }
+  try { return JSON.parse(text); }
+  catch { throw new Error("Analytics API returned invalid JSON"); }
 }
 
 async function adminSignature(env) {
@@ -83,7 +93,7 @@ svg{width:100%;height:180px;display:block}.axis{color:#718095;font-size:10px}
 <div class="section card"><h2>Activity</h2><div id="activity" class="muted">Loading…</div></div>
 </div>
 <script>
-async function api(path,options={}){const r=await fetch(path,options);if(r.status===401)throw new Error('Unauthorized');if(!r.ok)throw new Error('Request failed');return r.json();}
+async function api(path,options={}){const r=await fetch(path,options);let body=null;try{body=await r.json()}catch{}if(r.status===401)throw new Error('Unauthorized');if(!r.ok)throw new Error(body?.error||`Request failed (${r.status})`);return body;}
 const fmt=n=>Number(n||0).toLocaleString();
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function drawActivity(rows){
@@ -185,8 +195,8 @@ export default {
           activity: rows(activity)
         });
       } catch(e) {
-        console.error(e);
-        return json({error:"Analytics query failed"},500);
+        console.error("Analytics dashboard error:", e);
+        return json({error: e?.message || "Analytics query failed"},500);
       }
     }
 
