@@ -1,7 +1,7 @@
 const ALLOWED = {
   session_start: new Set(["session"]),
   tool_open: new Set(["subnet", "explorer", "optics", "config", "mtu", "dashboard"]),
-  tool_use: new Set(["subnet", "explorer", "optics", "config", "mtu"]),
+  tool_use: new Set(["subnet", "explorer", "optics", "config", "mtu", "mac-vendor"]),
   config_generated: new Set(["config"]),
   copy_result: new Set(["subnet", "explorer"])
 };
@@ -130,6 +130,54 @@ document.getElementById('refresh').onclick=()=>load().catch(e=>alert(e.message))
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/mac" && request.method === "GET") {
+      const v = (url.searchParams.get("v") || "").replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
+      if (v.length < 6 || v.length > 12) return json({found:false, error:"Invalid MAC/OUI"},400);
+
+      const cache = caches.default;
+      const cacheKey = new Request(`https://mac-cache.netopsbench.internal/${v}`);
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+
+      try {
+        const upstream = await fetch(
+          `https://api.maclookup.app/v2/macs/${encodeURIComponent(v)}?format=json`,
+          {headers: {"Accept":"application/json", "User-Agent":"NetOpsBench/1.0"}}
+        );
+        const text = await upstream.text();
+
+        if (!upstream.ok) {
+          return json({found:false, error:`Lookup service returned HTTP ${upstream.status}`},502);
+        }
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          return json({found:false, error:"Lookup service returned invalid JSON"},502);
+        }
+
+        if (!data || data.success === false) {
+          return json({
+            found:false,
+            error: data?.error || "No vendor found for that MAC/OUI."
+          }, 404);
+        }
+
+        const body = JSON.stringify(data);
+        const response = new Response(body, {
+          headers: {
+            "content-type":"application/json; charset=utf-8",
+            "cache-control":"public, max-age=86400, s-maxage=86400"
+          }
+        });
+        await cache.put(cacheKey, response.clone());
+        return response;
+      } catch (e) {
+        return json({found:false, error:"MAC lookup service unavailable"},502);
+      }
+    }
 
     if (url.pathname === "/api/event" && request.method === "POST") {
       try {
