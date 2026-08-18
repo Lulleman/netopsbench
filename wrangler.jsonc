@@ -1,6 +1,10 @@
 {
+  "keep_vars": true,
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "netopsbench",
+  "vars": {
+    "ACCOUNT_ID": "b3ce9ee6c65f3f652836c88474249aed"
+  },
   "main": "src/index.js",
   "compatibility_date": "2026-08-17",
   "assets": {
