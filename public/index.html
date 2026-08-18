@@ -19,6 +19,21 @@
 
 .mac-result{margin-top:18px}.mac-hero{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px}.mac-vendor{font-size:24px;font-weight:900;margin-top:5px}.mac-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.mac-meta .item{padding:12px}.mac-note{margin-top:12px;color:var(--muted);font-size:11px;line-height:1.5}.mac-error{color:var(--bad);margin-top:10px;font-size:12px}.lookup-btn{border:0;border-radius:10px;padding:12px 16px;background:var(--accent);color:#07111d;font-weight:800;cursor:pointer}@media(max-width:700px){.mac-meta{grid-template-columns:1fr}.mac-hero{display:block}}
 </style>
+
+<style id="netopsbench-nav-priority">
+/* v0.1.6: MAC Vendor Lookup is the primary navigation tool */
+[data-page="mac"], [data-open="mac"] { order: -10 !important; }
+[data-page="subnet"], [data-open="subnet"] { order: 0 !important; }
+[data-page="explorer"], [data-open="explorer"] { order: 1 !important; }
+[data-page="optics"], [data-open="optics"] { order: 2 !important; }
+[data-page="config"], [data-open="config"] { order: 3 !important; }
+[data-page="mtu"], [data-open="mtu"] { order: 4 !important; }
+/* Give MAC Vendor a subtle priority treatment without overwhelming the UI. */
+[data-page="mac"], [data-open="mac"] {
+  position: relative;
+}
+</style>
+
 </head>
 <body>
 <div class="app">
@@ -375,4 +390,42 @@ subnetCalc();
 document.addEventListener('click',e=>{const b=e.target.closest('.copyRow');if(b)track('copy_result',{tool:'explorer'});});
 getSessionId();
 </script>
+
+<script id="netopsbench-nav-v016">
+(() => {
+  const first = document.querySelector('[data-page="mac"], [data-open="mac"]');
+  if (!first) return;
+  const parent = first.parentElement;
+  if (parent) {
+    const items = Array.from(parent.children).filter(el =>
+      el.matches('[data-page], [data-open]') &&
+      ['mac-vendor','subnet','explorer','optics','config','mtu'].includes(
+        el.dataset.page || el.dataset.open
+      )
+    );
+    if (items.length >= 5) {
+      parent.style.display = 'flex';
+      parent.style.flexDirection = 'column';
+      const order = ['mac-vendor','subnet','explorer','optics','config','mtu'];
+      items.forEach(el => {
+        el.style.order = String(order.indexOf(el.dataset.page || el.dataset.open));
+      });
+    }
+  }
+})();
+</script>
+
+
+<script id="netopsbench-mac-badge-v016">
+(() => {
+  const el = document.querySelector('[data-page="mac"], [data-open="mac"]');
+  if (!el || el.querySelector('.nb-popular-badge')) return;
+  const badge = document.createElement('span');
+  badge.className = 'nb-popular-badge';
+  badge.textContent = 'POPULAR';
+  badge.style.cssText = 'margin-left:auto;font-size:8px;letter-spacing:.08em;opacity:.7;border:1px solid currentColor;border-radius:999px;padding:2px 5px;';
+  el.appendChild(badge);
+})();
+</script>
+
 </body></html>
