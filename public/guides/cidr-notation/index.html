@@ -1,1 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CIDR Notation Explained: From /8 to /32 | NetOpsBench</title>
+<meta name="description" content="Understand IPv4 CIDR notation, prefix lengths, subnet masks, address ranges, route summarization and longest-prefix matching.">
+<link rel="canonical" href="https://netopsbench.com/guides/cidr-notation/">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5463280438384033" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/guides/guides.css">
+</head>
+<body>
+<div class="wrap">
+<header class="topbar">
+  <a class="logo" href="/">NETOPSBENCH</a>
+  <a class="toplink" href="/guides/">← All guides</a>
+</header>
 
+<div class="breadcrumb"><a href="/guides/">Guides</a> / CIDR Notation</div>
+<div class="eyebrow">IPv4 / Routing</div>
+<h1>CIDR Notation Explained: From /8 to /32</h1>
+<p class="lead">CIDR is the compact way network engineers describe IPv4 prefixes. This guide covers prefix length, masks, address ranges, route summarization and longest-prefix matching.</p>
+<p class="meta">Reference guide · CIDR · Routing · Addressing</p>
+
+<article>
+<h2>What Does CIDR Mean?</h2>
+<p>CIDR stands for <strong>Classless Inter-Domain Routing</strong>. Instead of relying on the old class A/B/C model, CIDR describes an IPv4 network with an address followed by a prefix length, such as <code>10.20.0.0/16</code>.</p>
+<p>The number after the slash tells you how many of the 32 IPv4 bits belong to the network prefix.</p>
+
+<h2>Prefix Length and Subnet Mask</h2>
+<p>A prefix length can be represented as a dotted-decimal subnet mask. For example:</p>
+<table>
+<tr><th>CIDR</th><th>Subnet mask</th><th>Host bits</th><th>Total addresses</th></tr>
+<tr><td>/8</td><td>255.0.0.0</td><td>24</td><td>16,777,216</td></tr>
+<tr><td>/16</td><td>255.255.0.0</td><td>16</td><td>65,536</td></tr>
+<tr><td>/24</td><td>255.255.255.0</td><td>8</td><td>256</td></tr>
+<tr><td>/25</td><td>255.255.255.128</td><td>7</td><td>128</td></tr>
+<tr><td>/26</td><td>255.255.255.192</td><td>6</td><td>64</td></tr>
+<tr><td>/27</td><td>255.255.255.224</td><td>5</td><td>32</td></tr>
+<tr><td>/28</td><td>255.255.255.240</td><td>4</td><td>16</td></tr>
+<tr><td>/30</td><td>255.255.255.252</td><td>2</td><td>4</td></tr>
+<tr><td>/32</td><td>255.255.255.255</td><td>0</td><td>1</td></tr>
+</table>
+
+<h2>How Prefix Length Controls the Range</h2>
+<p>IPv4 has 32 bits. A <code>/24</code> uses 24 bits for the prefix, leaving eight host bits. A <code>/16</code> leaves 16 host bits, so its address space is much larger.</p>
+<p>The total number of addresses is:</p>
+<pre>2^(32 - prefix length)</pre>
+<p>For <code>172.16.0.0/20</code>:</p>
+<pre>32 - 20 = 12 host bits
+2^12 = 4096 addresses</pre>
+
+<h2>Finding the Network from an IP/CIDR</h2>
+<div class="callout">
+<strong>Example: <code>10.10.37.84/20</code></strong>
+<p>The mask is <code>255.255.240.0</code>. The third-octet block size is <code>256 - 240 = 16</code>. Valid network boundaries are 0, 16, 32, 48, ...</p>
+<p><code>37</code> falls into the 32–47 block, so the network is <code>10.10.32.0/20</code>.</p>
+<p>The range is <code>10.10.32.0</code> through <code>10.10.47.255</code>.</p>
+</div>
+
+<h2>CIDR and Route Summarization</h2>
+<p>CIDR is particularly useful for summarizing multiple contiguous prefixes into a shorter route. For example, four adjacent <code>/24</code> networks can potentially be summarized as one <code>/22</code> if they are aligned correctly.</p>
+<p>Consider:</p>
+<ul>
+<li><code>10.20.0.0/24</code></li>
+<li><code>10.20.1.0/24</code></li>
+<li><code>10.20.2.0/24</code></li>
+<li><code>10.20.3.0/24</code></li>
+</ul>
+<p>These can be represented by <code>10.20.0.0/22</code>. The summary covers 1024 addresses.</p>
+<p>Summarization reduces routing-table entries and can make routing domains easier to operate, but the summary must not unintentionally include address space that belongs somewhere else.</p>
+
+<h2>Longest Prefix Match</h2>
+<p>When multiple routes match a destination, routers generally select the most specific matching prefix — the route with the longest prefix length.</p>
+<div class="card">
+<p><code>10.0.0.0/8</code></p>
+<p><code>10.20.0.0/16</code></p>
+<p><code>10.20.30.0/24</code></p>
+<p>For destination <code>10.20.30.45</code>, all three routes match, but <code>/24</code> is the most specific and therefore wins the longest-prefix comparison.</p>
+</div>
+
+<h2>CIDR Is Not the Same as a VLAN</h2>
+<p>A CIDR prefix describes an IP address range. A VLAN is a Layer 2 segmentation mechanism. They are commonly associated — for example, one VLAN may use <code>192.168.50.0/24</code> — but they are not inherently the same thing.</p>
+<p>A routed interface can have a CIDR prefix without being a traditional access VLAN, and a Layer 2 VLAN can exist before an IP subnet is assigned to it.</p>
+
+<h2>Private IPv4 CIDR Blocks</h2>
+<p>RFC 1918 defines three IPv4 ranges reserved for private internetworks:</p>
+<table>
+<tr><th>Range</th><th>CIDR</th><th>Addresses</th></tr>
+<tr><td>10.0.0.0 – 10.255.255.255</td><td>/8</td><td>16,777,216</td></tr>
+<tr><td>172.16.0.0 – 172.31.255.255</td><td>/12</td><td>1,048,576</td></tr>
+<tr><td>192.168.0.0 – 192.168.255.255</td><td>/16</td><td>65,536</td></tr>
+</table>
+<p>Private addressing is common inside enterprise networks, but private does not mean globally routable. Internet access normally requires some form of translation, proxying or another edge mechanism.</p>
+
+<h2>/31 and /32</h2>
+<p>Two prefixes deserve special attention in operational networks.</p>
+<p><strong>/31:</strong> RFC 3021 defines the use of <code>/31</code> prefixes on point-to-point links. The two addresses can both be used by the endpoints, avoiding the traditional network/broadcast waste.</p>
+<p><strong>/32:</strong> A <code>/32</code> identifies exactly one IPv4 address. It is commonly used for host routes, loopbacks and specific routing entries.</p>
+
+<h2>Practical CIDR Checklist</h2>
+<ol>
+<li>Identify the prefix length.</li>
+<li>Convert it to a mask if needed.</li>
+<li>Determine the host-bit count.</li>
+<li>Calculate total address capacity.</li>
+<li>Find the correct network boundary.</li>
+<li>Check whether the range overlaps existing allocations.</li>
+<li>For routing, verify whether the prefix is more or less specific than competing routes.</li>
+</ol>
+
+<div class="cta">
+<h2>Use the NetOpsBench IP / CIDR Explorer</h2>
+<p>Inspect a parent network, calculate child subnets and explore address ranges without doing the prefix math manually.</p>
+<a class="button" href="/">Open NetOpsBench →</a>
+</div>
+
+<h2>FAQ</h2>
+<h3>Does a larger CIDR number mean a larger network?</h3>
+<p>No. A larger prefix length means more bits are fixed as the network prefix and therefore fewer host addresses. A <code>/28</code> is smaller than a <code>/24</code>.</p>
+<h3>What is the difference between /24 and 255.255.255.0?</h3>
+<p>They describe the same prefix. CIDR notation is simply the compact form.</p>
+<h3>Why can't any IP address be used as a network address?</h3>
+<p>The network address must have all host bits set to zero for that prefix. The valid boundaries therefore depend on the prefix length.</p>
+
+<p class="small"><strong>References:</strong> RFC 4632 (CIDR), RFC 1812 (IPv4 routing requirements), RFC 1918 (private address space), RFC 3021 (/31 point-to-point addressing).</p>
+
+<div class="related">
+<a href="/guides/ipv4-subnetting/">IPv4 Subnetting →</a>
+<a href="/guides/mtu-explained/">MTU Explained →</a>
+<a href="/guides/">All Guides →</a>
+</div>
+</article>
+
+</div>
+</body>
+</html>
