@@ -33,19 +33,9 @@ button,input,select{font-family:inherit}.app{min-height:100vh;display:flex}.side
 .home-hero .title{margin-top:12px;max-width:700px}
 .home-hero .title span{color:#69a9f4}
 .home-hero .sub{max-width:540px}
-.home-globe{position:absolute;z-index:1;right:-4px;top:-38px;width:650px;height:350px;pointer-events:none;opacity:.94}
-.home-globe::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 58% 48%,rgba(25,101,177,.22),rgba(8,30,53,.08) 42%,transparent 68%);filter:blur(5px)}
-.home-globe::after{content:"";position:absolute;left:0;top:0;width:35%;height:100%;background:linear-gradient(90deg,#0b0f14 0%,rgba(11,15,20,.9) 48%,transparent 100%);z-index:3;pointer-events:none}
-.home-globe svg{width:100%;height:100%;overflow:visible}
-.home-globe .globe-edge{fill:url(#globeFill);stroke:#2c82d4;stroke-width:1.2;filter:url(#glow)}
-.home-globe .globe-grid{fill:none;stroke:#1c6aa9;stroke-width:.65;opacity:.24}
-.home-globe .globe-dot{fill:#5baaff;opacity:.8}
-.home-globe .globe-route{fill:none;stroke:#58a8f6;stroke-width:1.15;opacity:.72}
-.home-globe .globe-node{fill:#d7ecff;filter:url(#glow)}
-.home-globe .map-dot{fill:#3b91dd;opacity:.58}
-.home-globe .map-dot.bright{fill:#71baff;opacity:.8}
-.home-globe .route-soft{fill:none;stroke:#3f91e2;stroke-width:.8;opacity:.48}
-.home-globe .route-main{fill:none;stroke:#79bdff;stroke-width:1.05;opacity:.78}
+.home-globe{position:absolute;z-index:1;right:-5px;top:-25px;width:620px;height:285px;pointer-events:none;opacity:.94;overflow:hidden}
+.home-globe img{display:block;width:100%;height:auto;filter:saturate(1.04) brightness(1.02);mix-blend-mode:screen}
+.home-globe::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#0b0f14 0%,rgba(11,15,20,.72) 9%,transparent 28%,transparent 78%,rgba(11,15,20,.22) 100%),linear-gradient(0deg,#0b0f14 0%,transparent 25%);pointer-events:none}
 .home-steps{position:absolute;right:4px;top:72px;width:96px;z-index:5;color:#91a8c0;font-size:10px;font-weight:700;letter-spacing:.13em;line-height:1.65;text-transform:uppercase}
 .home-steps::after{content:"";display:block;width:31px;height:3px;background:#4e9dfb;margin-top:11px}
 .home-features{position:relative;z-index:4;display:grid;grid-template-columns:repeat(3,1fr);gap:38px;max-width:740px;margin-top:-7px}
@@ -130,6 +120,20 @@ button,input,select{font-family:inherit}.app{min-height:100vh;display:flex}.side
   .home-globe{display:none}
 }
 
+
+@media(min-width:1351px){
+  .home-globe{right:0;top:-28px;width:650px;height:300px}
+}
+@media(min-width:1101px) and (max-width:1350px){
+  .home-globe{right:-80px;top:-20px;width:565px;height:275px;opacity:.82}
+}
+@media(max-width:1100px){
+  .home-globe{right:-95px;top:-15px;width:500px;height:245px;opacity:.58}
+}
+@media(max-width:700px){
+  .home-globe{display:none}
+}
+
 </style>
 
 
@@ -181,103 +185,7 @@ button,input,select{font-family:inherit}.app{min-height:100vh;display:flex}.side
     <p class="sub">Fast, practical tools built for network engineers.</p>
   </div>
 
-  <div class="home-globe" aria-hidden="true">
-    <svg viewBox="0 0 650 350" role="presentation">
-      <defs>
-        <radialGradient id="globeFill" cx="55%" cy="43%" r="64%">
-          <stop offset="0%" stop-color="#123d6a" stop-opacity=".42"/>
-          <stop offset="52%" stop-color="#0b2948" stop-opacity=".24"/>
-          <stop offset="100%" stop-color="#061321" stop-opacity=".02"/>
-        </radialGradient>
-        <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="2.2" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <clipPath id="globeClip"><ellipse cx="348" cy="169" rx="220" ry="139"/></clipPath>
-      </defs>
-
-      <ellipse class="globe-edge" cx="348" cy="169" rx="220" ry="139"/>
-
-      <g clip-path="url(#globeClip)">
-        <!-- subtle latitude / longitude grid -->
-        <ellipse class="globe-grid" cx="348" cy="169" rx="176" ry="139"/>
-        <ellipse class="globe-grid" cx="348" cy="169" rx="112" ry="139"/>
-        <ellipse class="globe-grid" cx="348" cy="169" rx="52" ry="139"/>
-        <ellipse class="globe-grid" cx="348" cy="169" rx="220" ry="92"/>
-        <ellipse class="globe-grid" cx="348" cy="169" rx="220" ry="48"/>
-        <path class="globe-grid" d="M128 169H568M145 117Q348 151 551 117M145 221Q348 187 551 221"/>
-
-        <!-- stylised dotted world landmass -->
-        <g>
-          <!-- North America -->
-          <g class="map-dot">
-            <circle cx="190" cy="103" r="1.3"/><circle cx="202" cy="98" r="1.1"/><circle cx="214" cy="101" r="1.4"/>
-            <circle cx="225" cy="108" r="1.2"/><circle cx="237" cy="111" r="1.3"/><circle cx="246" cy="119" r="1.1"/>
-            <circle cx="181" cy="112" r="1"/><circle cx="194" cy="117" r="1.2"/><circle cx="207" cy="120" r="1.4"/>
-            <circle cx="220" cy="125" r="1"/><circle cx="232" cy="130" r="1.2"/><circle cx="242" cy="137" r="1"/>
-            <circle cx="188" cy="128" r="1"/><circle cx="201" cy="133" r="1.2"/><circle cx="215" cy="139" r="1.1"/>
-            <circle cx="227" cy="145" r="1"/><circle cx="238" cy="151" r="1.2"/>
-            <circle cx="255" cy="126" r=".9"/><circle cx="263" cy="135" r="1"/><circle cx="269" cy="145" r=".9"/>
-          </g>
-          <!-- Central / South America -->
-          <g class="map-dot">
-            <circle cx="267" cy="160" r="1"/><circle cx="273" cy="169" r="1.2"/><circle cx="277" cy="179" r="1"/>
-            <circle cx="281" cy="188" r="1.1"/><circle cx="286" cy="198" r=".9"/><circle cx="289" cy="208" r="1"/>
-            <circle cx="295" cy="217" r=".9"/><circle cx="300" cy="225" r=".8"/>
-          </g>
-          <!-- Europe -->
-          <g class="map-dot bright">
-            <circle cx="347" cy="105" r="1.2"/><circle cx="357" cy="101" r="1"/><circle cx="367" cy="104" r="1.2"/>
-            <circle cx="376" cy="109" r="1.1"/><circle cx="386" cy="108" r=".9"/><circle cx="394" cy="113" r="1"/>
-            <circle cx="354" cy="113" r="1"/><circle cx="364" cy="116" r="1.2"/><circle cx="374" cy="118" r=".9"/>
-            <circle cx="384" cy="121" r="1.1"/><circle cx="395" cy="119" r=".9"/><circle cx="404" cy="123" r="1"/>
-          </g>
-          <!-- Africa -->
-          <g class="map-dot">
-            <circle cx="365" cy="140" r="1.2"/><circle cx="377" cy="145" r="1"/><circle cx="386" cy="151" r="1.2"/>
-            <circle cx="393" cy="160" r="1"/><circle cx="398" cy="169" r="1.1"/><circle cx="394" cy="180" r="1"/>
-            <circle cx="389" cy="190" r="1.1"/><circle cx="383" cy="199" r=".9"/><circle cx="376" cy="208" r="1"/>
-            <circle cx="369" cy="216" r=".9"/><circle cx="362" cy="224" r=".8"/><circle cx="356" cy="231" r=".8"/>
-            <circle cx="355" cy="153" r=".9"/><circle cx="366" cy="160" r="1"/><circle cx="375" cy="170" r="1"/>
-          </g>
-          <!-- Asia -->
-          <g class="map-dot">
-            <circle cx="414" cy="105" r="1.1"/><circle cx="426" cy="103" r="1"/><circle cx="438" cy="107" r="1.2"/>
-            <circle cx="450" cy="111" r="1"/><circle cx="463" cy="115" r="1.1"/><circle cx="475" cy="121" r="1"/>
-            <circle cx="487" cy="126" r="1.2"/><circle cx="499" cy="132" r=".9"/><circle cx="509" cy="139" r="1"/>
-            <circle cx="420" cy="116" r="1.2"/><circle cx="433" cy="119" r=".9"/><circle cx="446" cy="123" r="1.1"/>
-            <circle cx="458" cy="128" r="1"/><circle cx="470" cy="134" r="1.2"/><circle cx="482" cy="140" r=".9"/>
-            <circle cx="494" cy="146" r="1.1"/><circle cx="506" cy="151" r=".9"/>
-            <circle cx="431" cy="134" r="1"/><circle cx="443" cy="140" r=".9"/><circle cx="455" cy="146" r="1"/>
-            <circle cx="468" cy="152" r=".9"/><circle cx="480" cy="158" r="1"/><circle cx="493" cy="164" r=".8"/>
-          </g>
-          <!-- Australia -->
-          <g class="map-dot">
-            <circle cx="482" cy="202" r="1.2"/><circle cx="493" cy="198" r="1"/><circle cx="504" cy="201" r="1.1"/>
-            <circle cx="514" cy="207" r=".9"/><circle cx="505" cy="215" r="1"/><circle cx="493" cy="218" r=".9"/>
-            <circle cx="484" cy="212" r=".9"/>
-          </g>
-        </g>
-
-        <!-- Network routes -->
-        <path class="route-soft" d="M203 127 Q310 54 397 116 T520 142"/>
-        <path class="route-soft" d="M230 188 Q326 82 438 151 T520 205"/>
-        <path class="route-main" d="M206 154 Q286 61 372 112 T474 181"/>
-        <path class="route-main" d="M276 207 Q352 103 447 127 T522 154"/>
-        <path class="route-soft" d="M321 230 Q378 166 425 103 T506 119"/>
-        <path class="route-main" d="M177 119 Q270 180 361 118 T500 179"/>
-
-        <!-- connection nodes -->
-        <circle class="globe-node" cx="206" cy="154" r="3"/>
-        <circle class="globe-node" cx="372" cy="112" r="3"/>
-        <circle class="globe-node" cx="474" cy="181" r="3"/>
-        <circle class="globe-node" cx="276" cy="207" r="2.6"/>
-        <circle class="globe-node" cx="447" cy="127" r="2.8"/>
-        <circle class="globe-node" cx="522" cy="154" r="2.7"/>
-        <circle class="globe-node" cx="361" cy="118" r="2.5"/>
-      </g>
-    </svg>
-  </div>
+  <div class="home-globe" aria-hidden="true"><img src="/netopsbench-realistic-globe.png" alt=""></div>
 
   <div class="home-steps">
     PLAN<br>CALCULATE<br>CONFIGURE<br>TROUBLESHOOT<br>LEARN<br>BUILD BETTER<br>NETWORKS
