@@ -1,1 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MTU Explained: VLAN, GRE, VXLAN and IPsec Overhead | NetOpsBench</title>
+<meta name="description" content="Understand MTU, packet overhead, fragmentation, PMTUD and TCP MSS. Learn how VLAN, GRE, VXLAN and IPsec encapsulation affect effective MTU.">
+<link rel="canonical" href="https://netopsbench.com/guides/mtu-explained/">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5463280438384033" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/guides/guides.css">
+</head>
+<body>
+<div class="wrap">
+<header class="topbar">
+  <a class="logo" href="/">NETOPSBENCH</a>
+  <a class="toplink" href="/guides/">← All guides</a>
+</header>
 
+<div class="breadcrumb"><a href="/guides/">Guides</a> / MTU Explained</div>
+<div class="eyebrow">Troubleshooting / Encapsulation</div>
+<h1>MTU Explained: VLAN, GRE, VXLAN and IPsec Overhead</h1>
+<p class="lead">MTU problems are often caused by one simple fact: an encapsulated packet needs more bytes than the original packet. This guide explains the overhead, the resulting effective MTU and a practical troubleshooting workflow.</p>
+<p class="meta">Reference guide · Ethernet · GRE · VXLAN · IPsec · PMTUD · TCP MSS</p>
+
+<article>
+<h2>What Is MTU?</h2>
+<p>MTU — Maximum Transmission Unit — is the largest Layer 3 packet a network interface or path can transmit without requiring fragmentation at that layer.</p>
+<p>1500 bytes is a common Ethernet IP MTU, but it is not universal. Jumbo Ethernet, tunnels, provider networks and overlay designs may use different values.</p>
+<p>The important question is not only <em>"What is the interface MTU?"</em> but also <em>"What is the smallest MTU available across the path after encapsulation?"</em></p>
+
+<h2>Quick Reference</h2>
+<table>
+<tr><th>Encapsulation</th><th>Typical overhead*</th><th>1500-byte outer MTU leaves</th></tr>
+<tr><td>802.1Q VLAN</td><td>4 bytes at Ethernet frame level</td><td>1500-byte IP MTU remains</td></tr>
+<tr><td>GRE over IPv4</td><td>24 bytes</td><td>1476-byte inner IP MTU</td></tr>
+<tr><td>VXLAN over IPv4</td><td>36 bytes above inner IP</td><td>1464-byte inner IP MTU</td></tr>
+<tr><td>IPsec</td><td>Implementation-dependent</td><td>Must be calculated for the actual tunnel</td></tr>
+</table>
+<p class="small">*Typical values. Exact overhead depends on headers, options, transport, mode and implementation. For VXLAN, the 36-byte figure is IPv4 + UDP + VXLAN above the inner IP packet; measuring a complete Ethernet frame produces a different number.</p>
+
+<h2>Why Does MTU Matter?</h2>
+<p>If an original packet fits inside the configured MTU but does not fit after encapsulation, something has to give. Depending on the protocol and configuration, the packet may be fragmented, dropped, or trigger Path MTU Discovery behavior.</p>
+<p>MTU problems are especially frustrating because small packets often work. A TCP connection may establish successfully while larger transfers stall, certain applications fail, or HTTPS behaves differently from a simple ping.</p>
+
+<h2>MTU vs Packet Size</h2>
+<p>MTU and packet size are related but not identical concepts. MTU is the maximum size permitted by an interface or path. The packet may be smaller.</p>
+<p>For example, with a 1500-byte IP MTU, an IPv4 TCP packet carrying 1460 bytes of TCP payload can fit because the 20-byte IPv4 header and 20-byte TCP header bring the IP packet to 1500 bytes.</p>
+
+<h2>VLAN Overhead</h2>
+<p>An 802.1Q VLAN tag adds 4 bytes to the Ethernet frame. Importantly, a normal VLAN tag does not usually reduce the configured Layer 3 IP MTU from 1500 to 1496. Ethernet equipment is designed to accommodate the tagged frame.</p>
+<p>The distinction between Layer 2 frame size and Layer 3 IP MTU matters when comparing vendor documentation or diagnosing a path.</p>
+
+<h2>GRE Overhead</h2>
+<p>A basic GRE tunnel over IPv4 commonly adds:</p>
+<ul>
+<li>20 bytes for the outer IPv4 header</li>
+<li>4 bytes for the basic GRE header</li>
+</ul>
+<p>Total: <strong>24 bytes</strong>.</p>
+<p>If the outer path supports only a 1500-byte IP MTU, the inner IP packet may need to be limited to approximately:</p>
+<pre>1500 - 24 = 1476 bytes</pre>
+<p>GRE options or additional encapsulation can change the exact number.</p>
+
+<h2>VXLAN Overhead</h2>
+<p>VXLAN commonly uses UDP over IP. A typical VXLAN packet over IPv4 adds:</p>
+<ul>
+<li>20 bytes outer IPv4 header</li>
+<li>8 bytes UDP header</li>
+<li>8 bytes VXLAN header</li>
+</ul>
+<p>That is 36 bytes above the inner IP packet:</p>
+<pre>1500 - 36 = 1464 bytes</pre>
+<p>When calculating the full outer Ethernet frame, the outer Ethernet header and optional VLAN tagging also matter. Always state which layer your overhead calculation refers to.</p>
+
+<h2>VXLAN Example</h2>
+<div class="callout">
+<strong>Underlay MTU: 1500</strong>
+<p>Suppose a host generates an inner IP packet of 1500 bytes. Adding the typical 36-byte VXLAN/IPv4/UDP overhead creates an outer IP packet of approximately 1536 bytes.</p>
+<p>If the underlay cannot carry that size, the packet cannot traverse the path unchanged. A common design response is to raise the underlay MTU so the encapsulated packet fits.</p>
+</div>
+
+<h2>IPsec and MTU</h2>
+<p>IPsec is more complicated because the overhead depends on the tunnel mode, encryption/authentication algorithms, padding, address family and implementation.</p>
+<p>Do not assume one universal "IPsec overhead" number. Calculate the actual tunnel encapsulation used by the platform, then leave enough headroom for the outer packet.</p>
+<p>This is one reason IPsec deployments often use reduced tunnel/interface MTUs or TCP MSS adjustment rather than relying on every endpoint to discover the correct value automatically.</p>
+
+<h2>Path MTU Discovery</h2>
+<p>Path MTU Discovery (PMTUD) attempts to discover the largest packet that can traverse a path without fragmentation. For IPv4, a router can signal that a packet is too large using ICMP Destination Unreachable with the "Fragmentation Needed" indication.</p>
+<p>If those ICMP messages are filtered, PMTUD can fail. The sender may continue transmitting packets that are too large, resulting in a black-hole MTU condition.</p>
+
+<h2>Why MTU Problems Are So Difficult to Diagnose</h2>
+<p>MTU issues can be asymmetric and protocol-dependent. Common symptoms include:</p>
+<ul>
+<li>Ping works, but larger pings fail.</li>
+<li>TCP sessions establish, but transfers hang.</li>
+<li>Some websites work while others do not.</li>
+<li>Traffic works without a VPN or tunnel but fails through it.</li>
+<li>IPv4 works while IPv6 behaves differently.</li>
+<li>Only specific paths or remote sites are affected.</li>
+</ul>
+<p>The fact that a small packet succeeds proves very little about the maximum packet size of the path.</p>
+
+<h2>MTU and TCP MSS</h2>
+<p>TCP MSS limits the TCP payload size advertised by endpoints. For a typical 1500-byte IPv4 interface MTU:</p>
+<pre>1500 - 20 IPv4 - 20 TCP = 1460 byte MSS</pre>
+<p>If the effective path MTU is 1400 bytes:</p>
+<pre>1400 - 20 IPv4 - 20 TCP = 1360 byte MSS</pre>
+<p>MSS clamping can prevent TCP endpoints from generating segments that are too large for a tunnel or constrained path. It does not, however, fix every MTU problem — non-TCP traffic and broken PMTUD still need consideration.</p>
+
+<h2>A Practical MTU Troubleshooting Workflow</h2>
+<ol>
+<li><strong>Identify the path.</strong> Determine where encapsulation begins and ends.</li>
+<li><strong>List every encapsulation layer.</strong> VLAN, GRE, VXLAN, IPsec, PPPoE and provider-specific headers can all matter.</li>
+<li><strong>Check interface MTUs.</strong> Verify both tunnel and physical interfaces where relevant.</li>
+<li><strong>Calculate the expected effective MTU.</strong> Subtract the actual overhead from the outer path MTU.</li>
+<li><strong>Test packet sizes.</strong> Use DF-aware tests where appropriate and increase/decrease payload size systematically.</li>
+<li><strong>Check ICMP handling.</strong> Verify that PMTUD-related ICMP messages are not being filtered.</li>
+<li><strong>Inspect TCP MSS.</strong> Compare advertised MSS with the actual path MTU.</li>
+<li><strong>Capture traffic if needed.</strong> Packet captures often reveal the exact outer packet size and whether packets are fragmented or dropped.</li>
+</ol>
+
+<h2>MTU Design Example</h2>
+<p>Imagine an overlay network using VXLAN over an IPv4 underlay. The design target is to support a full 1500-byte inner IP packet.</p>
+<p>With typical 36-byte VXLAN/IPv4/UDP overhead, the underlay needs to support at least:</p>
+<pre>1500 + 36 = 1536 byte outer IP packet</pre>
+<p>In a real Ethernet design, the required frame size also includes the relevant Ethernet headers and any tags. The exact configured MTU should therefore be based on the platform's definition of MTU and the complete encapsulation stack.</p>
+
+<h2>The Golden Rule of MTU</h2>
+<div class="callout">
+<strong>Calculate from the outside in.</strong>
+<p>Start with the maximum packet size the physical path can carry. Subtract every header added by encapsulation. The result is the maximum inner packet size that can safely traverse that path without fragmentation.</p>
+</div>
+
+<div class="cta">
+<h2>Use the NetOpsBench MTU Calculator</h2>
+<p>Calculate effective MTU and encapsulation overhead without doing the header math manually.</p>
+<a class="button" href="/">Open NetOpsBench →</a>
+</div>
+
+<h2>FAQ</h2>
+<h3>Is Ethernet MTU always 1500?</h3>
+<p>No. 1500 bytes is common, but jumbo frames and other technologies use different values.</p>
+<h3>Does a VLAN tag reduce IP MTU by 4 bytes?</h3>
+<p>Not normally. The 4-byte 802.1Q tag increases the Ethernet frame size; a standard 1500-byte IP MTU can still be carried inside the tagged frame.</p>
+<h3>Why does VXLAN often require a larger underlay MTU?</h3>
+<p>Because the original packet is wrapped in additional outer headers. If you want a full-size inner packet, the underlay must accommodate the encapsulated packet.</p>
+<h3>Can MSS clamping solve MTU problems?</h3>
+<p>It can prevent many TCP sessions from sending segments that exceed the effective path MTU, but it does not solve non-TCP traffic or every PMTUD failure.</p>
+
+<p class="small"><strong>References:</strong> RFC 2784 (GRE), RFC 7348 (VXLAN), RFC 1191 (IPv4 Path MTU Discovery), RFC 4301 (IPsec).</p>
+
+<div class="related">
+<a href="/guides/ipv4-subnetting/">IPv4 Subnetting →</a>
+<a href="/guides/cidr-notation/">CIDR Notation →</a>
+<a href="/guides/">All Guides →</a>
+</div>
+</article>
+
+</div>
+</body>
+</html>
