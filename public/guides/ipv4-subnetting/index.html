@@ -1,1 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IPv4 Subnetting Explained: A Practical Guide | NetOpsBench</title>
+<meta name="description" content="Learn practical IPv4 subnetting: network and broadcast addresses, usable hosts, subnet boundaries, /24 splits and VLSM.">
+<link rel="canonical" href="https://netopsbench.com/guides/ipv4-subnetting/">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5463280438384033" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/guides/guides.css">
+</head>
+<body>
+<div class="wrap">
+<header class="topbar">
+  <a class="logo" href="/">NETOPSBENCH</a>
+  <a class="toplink" href="/guides/">← All guides</a>
+</header>
 
+<div class="breadcrumb"><a href="/guides/">Guides</a> / IPv4 Subnetting</div>
+<div class="eyebrow">IPv4 / Addressing</div>
+<h1>IPv4 Subnetting Explained: A Practical Guide</h1>
+<p class="lead">A practical reference for calculating IPv4 networks, usable hosts, broadcast addresses and subnet boundaries — without relying on a calculator for every step.</p>
+<p class="meta">Reference guide · IPv4 · CIDR · VLSM</p>
+
+<article>
+<h2>What Is Subnetting?</h2>
+<p>Subnetting divides an IPv4 address space into smaller networks. Instead of treating an entire address block as one broadcast domain, you borrow bits from the host portion of the address to create additional network prefixes.</p>
+<p>The result is a longer prefix and therefore smaller individual networks. For example, splitting <code>192.168.10.0/24</code> into four equal networks gives four <code>/26</code> subnets:</p>
+<ul>
+<li><code>192.168.10.0/26</code></li>
+<li><code>192.168.10.64/26</code></li>
+<li><code>192.168.10.128/26</code></li>
+<li><code>192.168.10.192/26</code></li>
+</ul>
+
+<h2>IPv4 Address Structure</h2>
+<p>An IPv4 address contains 32 bits. The prefix length tells you how many of those bits identify the network, while the remaining bits are available for host addressing.</p>
+<table>
+<tr><th>Prefix</th><th>Mask</th><th>Total addresses</th><th>Typical usable hosts</th></tr>
+<tr><td>/24</td><td>255.255.255.0</td><td>256</td><td>254</td></tr>
+<tr><td>/25</td><td>255.255.255.128</td><td>128</td><td>126</td></tr>
+<tr><td>/26</td><td>255.255.255.192</td><td>64</td><td>62</td></tr>
+<tr><td>/27</td><td>255.255.255.224</td><td>32</td><td>30</td></tr>
+<tr><td>/28</td><td>255.255.255.240</td><td>16</td><td>14</td></tr>
+<tr><td>/29</td><td>255.255.255.248</td><td>8</td><td>6</td></tr>
+<tr><td>/30</td><td>255.255.255.252</td><td>4</td><td>2</td></tr>
+<tr><td>/31</td><td>255.255.255.254</td><td>2</td><td>2 point-to-point addresses*</td></tr>
+<tr><td>/32</td><td>255.255.255.255</td><td>1</td><td>1 host route</td></tr>
+</table>
+<p class="small">* <code>/31</code> point-to-point addressing is defined by RFC 3021 and does not use the traditional network/broadcast interpretation.</p>
+
+<h2>How to Find the Network Address</h2>
+<p>The network address is the first address in the subnet. Conceptually, you keep the prefix bits and set all host bits to zero.</p>
+<div class="callout">
+<strong>Example: <code>192.168.10.77/26</code></strong>
+<p>The <code>/26</code> mask is <code>255.255.255.192</code>. The block size in the last octet is <code>256 - 192 = 64</code>. The subnet boundaries are therefore 0, 64, 128 and 192.</p>
+<p><code>77</code> falls between <code>64</code> and <code>127</code>, so the network is <code>192.168.10.64/26</code>.</p>
+</div>
+
+<h2>Broadcast and Usable Host Range</h2>
+<p>For traditional IPv4 subnets, the broadcast address is the last address in the subnet. The usable host range sits between the network and broadcast addresses.</p>
+<p>For <code>192.168.10.64/26</code>:</p>
+<ul>
+<li>Network: <code>192.168.10.64</code></li>
+<li>First host: <code>192.168.10.65</code></li>
+<li>Last host: <code>192.168.10.126</code></li>
+<li>Broadcast: <code>192.168.10.127</code></li>
+<li>Total addresses: <code>64</code></li>
+<li>Traditional usable hosts: <code>62</code></li>
+</ul>
+
+<h2>Calculating Host Capacity</h2>
+<p>If the prefix length is <code>/n</code>, the number of host bits is <code>32 - n</code>. The total number of addresses is:</p>
+<pre>2^(32 - prefix length)</pre>
+<p>For a <code>/27</code>, there are five host bits:</p>
+<pre>2^5 = 32 total addresses</pre>
+<p>Under the traditional network/broadcast model, that means 30 usable host addresses.</p>
+
+<h2>Subnetting a /24</h2>
+<p>A common operational example is dividing a <code>/24</code> into smaller equal-sized networks.</p>
+<table>
+<tr><th>New prefix</th><th>Subnets from /24</th><th>Addresses/subnet</th><th>Traditional usable hosts</th></tr>
+<tr><td>/25</td><td>2</td><td>128</td><td>126</td></tr>
+<tr><td>/26</td><td>4</td><td>64</td><td>62</td></tr>
+<tr><td>/27</td><td>8</td><td>32</td><td>30</td></tr>
+<tr><td>/28</td><td>16</td><td>16</td><td>14</td></tr>
+<tr><td>/29</td><td>32</td><td>8</td><td>6</td></tr>
+<tr><td>/30</td><td>64</td><td>4</td><td>2</td></tr>
+</table>
+
+<h2>VLSM: Different Subnet Sizes</h2>
+<p>Variable Length Subnet Masking (VLSM) lets you allocate different prefix lengths from the same address block. This avoids wasting large subnets on small point-to-point links or infrastructure segments.</p>
+<p>A practical allocation might use a <code>/24</code> like this:</p>
+<ul>
+<li><code>/25</code> for a larger user VLAN</li>
+<li><code>/27</code> for infrastructure</li>
+<li><code>/28</code> for a small service segment</li>
+<li><code>/30</code> for a traditional point-to-point link</li>
+</ul>
+<p>When planning VLSM, allocate the largest required subnet first and continue with progressively smaller blocks. Each subnet must start on a valid boundary for its prefix.</p>
+
+<h2>Subnet Boundaries Matter</h2>
+<p>A subnet is not defined by an arbitrary first address. The network address must align with the prefix. For example, <code>192.168.10.70/26</code> is a valid host address, but it is not a valid <code>/26</code> network address. The corresponding network is <code>192.168.10.64/26</code>.</p>
+<p>This becomes especially important when summarizing routes, assigning VLANs and troubleshooting overlapping address ranges.</p>
+
+<h2>Practical Subnetting Workflow</h2>
+<ol>
+<li>Identify the required number of hosts or subnets.</li>
+<li>Choose the smallest prefix that provides enough addresses.</li>
+<li>Determine the subnet block size.</li>
+<li>Find the valid network boundary.</li>
+<li>Calculate broadcast and usable host range.</li>
+<li>Check for overlap with existing allocations.</li>
+</ol>
+
+<div class="cta">
+<h2>Use the NetOpsBench Subnet Calculator</h2>
+<p>Calculate the network, mask, host range, broadcast address and subnet breakdown without doing the boundary math manually.</p>
+<a class="button" href="/">Open NetOpsBench →</a>
+</div>
+
+<h2>FAQ</h2>
+<h3>Why does a /26 have 64 addresses?</h3>
+<p>A <code>/26</code> leaves six host bits. <code>2^6 = 64</code> total addresses.</p>
+<h3>Is every subnet limited to two fewer usable addresses?</h3>
+<p>No. The traditional IPv4 model reserves the network and broadcast addresses, but special cases such as <code>/31</code> point-to-point links and <code>/32</code> host routes have different semantics.</p>
+<h3>What is the fastest way to find a subnet boundary?</h3>
+<p>For the octet containing the prefix boundary, calculate <code>256 - mask value</code>. The resulting block size gives the valid boundaries.</p>
+
+<p class="small"><strong>Reference:</strong> RFC 4632 (Classless Inter-domain Routing), RFC 1812 (IPv4 routing requirements), RFC 3021 (/31 point-to-point addressing).</p>
+
+<div class="related">
+<a href="/guides/cidr-notation/">CIDR Notation Explained →</a>
+<a href="/guides/mtu-explained/">MTU Explained →</a>
+<a href="/guides/">All Guides →</a>
+</div>
+</article>
+
+</div>
+</body>
+</html>
