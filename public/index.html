@@ -106,8 +106,28 @@ button,input,select{font-family:inherit}.app{min-height:100vh;display:flex}.side
 
 
 @media(min-width:1101px){
-  .home-hero-copy{padding-right:300px}
-  .home-globe svg{transform:scale(1.04);transform-origin:center}
+  .home-globe svg{transform:scale(1.02);transform-origin:center}
+}
+
+
+/* v0.6 hero composition */
+.home-globe{right:-18px;top:-34px;width:610px;height:330px;opacity:.88}
+.home-hero-copy{padding-right:0}
+@media(min-width:1351px){
+  .home-globe{right:-8px;top:-38px;width:650px;height:350px;opacity:.94}
+}
+@media(min-width:1101px) and (max-width:1350px){
+  .home-globe{right:-105px;top:-28px;width:560px;height:302px;opacity:.76}
+  .home-globe::after{width:40%}
+  .home-steps{right:0;top:72px}
+  .home-search{width:350px}
+}
+@media(max-width:1100px){
+  .home-globe{right:-90px;top:-25px;width:500px;height:270px;opacity:.58}
+  .home-globe::after{width:48%}
+}
+@media(max-width:700px){
+  .home-globe{display:none}
 }
 
 </style>
